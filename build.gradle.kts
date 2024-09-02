@@ -5,7 +5,7 @@ plugins {
 apply(from = "spikedev.gradle.kts")
 
 group = "diruptio"
-version = "0.4.4"
+version = "1.0.0"
 
 repositories {
     mavenCentral()
