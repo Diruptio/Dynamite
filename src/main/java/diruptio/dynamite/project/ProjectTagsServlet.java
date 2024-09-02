@@ -6,7 +6,6 @@ import diruptio.dynamite.Dynamite;
 import diruptio.dynamite.Project;
 import diruptio.spikedog.HttpRequest;
 import diruptio.spikedog.HttpResponse;
-
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
