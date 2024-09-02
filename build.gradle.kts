@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("diruptio:Spikedog:1.2.6")
+    compileOnly("diruptio:Spikedog:1.2.7")
     compileOnly("org.jetbrains:annotations:24.1.0")
 }
 
