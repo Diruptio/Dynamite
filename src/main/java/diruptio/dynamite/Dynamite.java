@@ -1,39 +1,41 @@
 package diruptio.dynamite;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonStreamParser;
-import diruptio.dynamite.project.ProjectCreateServlet;
-import diruptio.dynamite.project.ProjectTagsServlet;
-import diruptio.dynamite.project.version.VerisonCreateServlet;
-import diruptio.dynamite.project.version.VersionDownloadServlet;
-import diruptio.dynamite.project.version.VersionUploadServlet;
-import diruptio.spikedog.Listener;
+import static diruptio.dynamite.util.JsonUtil.*;
+
+import com.google.gson.*;
+import diruptio.dynamite.endpoint.ProjectEndpoint;
+import diruptio.dynamite.endpoint.ProjectsEndpoint;
+import diruptio.dynamite.endpoint.project.ProjectCreateEndpoint;
+import diruptio.dynamite.endpoint.project.ProjectTagsEndpoint;
+import diruptio.dynamite.endpoint.project.version.VerisonCreateEndpoint;
+import diruptio.dynamite.endpoint.project.version.VersionDownloadEndpoint;
+import diruptio.dynamite.endpoint.project.version.VersionUploadEndpoint;
+import diruptio.spikedog.*;
 import diruptio.spikedog.Module;
-import diruptio.spikedog.Spikedog;
 import diruptio.spikedog.config.Config;
-import java.io.BufferedReader;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class Dynamite implements Listener {
-    private static final @NotNull Logger logger = Logger.getLogger("Dynamite");
+    private static final List<Project> projects = new ArrayList<>();
+    private static Logger logger;
     private static Config config;
     private static Path projectsPath;
-    private static final @NotNull List<Project> projects = new ArrayList<>();
 
     @Override
     public void onLoad(@NotNull Module self) {
+        logger = Logger.getLogger("Dynamite");
         logger.setParent(Spikedog.LOGGER);
 
         Path configFile = self.file().resolveSibling("Dynamite").resolve("config.yml");
@@ -50,49 +52,109 @@ public class Dynamite implements Listener {
 
         load();
 
-        Spikedog.addServlet("/projects", new ProjectsServlet());
-        Spikedog.addServlet("/project", new ProjectServlet());
-        Spikedog.addServlet("/project/create", new ProjectCreateServlet());
-        Spikedog.addServlet("/project/tags", new ProjectTagsServlet());
-        Spikedog.addServlet("/project/version/create", new VerisonCreateServlet());
-        Spikedog.addServlet("/project/version/download", new VersionDownloadServlet());
-        Spikedog.addServlet("/project/version/upload", new VersionUploadServlet());
+        Spikedog.register(new ProjectEndpoint());
+        Spikedog.register(new ProjectsEndpoint());
+        Spikedog.register(new ProjectCreateEndpoint());
+        Spikedog.register(new ProjectTagsEndpoint());
+        Spikedog.register(new VerisonCreateEndpoint());
+        Spikedog.register(new VersionDownloadEndpoint());
+        Spikedog.register(new VersionUploadEndpoint());
     }
 
+    @SuppressWarnings("unchecked")
     private void load() {
         try {
             projects.clear();
             if (!Files.exists(projectsPath)) {
                 Files.createDirectories(projectsPath);
             }
-            Path projectsFile = projectsPath.resolve("projects.json");
-            if (!Files.exists(projectsFile)) {
-                Files.write(projectsFile, new JsonArray().toString().getBytes(), StandardOpenOption.CREATE_NEW);
+
+            Path projectNamesFile = projectsPath.resolve("projects.json");
+            if (!Files.exists(projectNamesFile)) {
+                Files.writeString(projectNamesFile, GSON.toJson(List.<String>of()), StandardOpenOption.CREATE_NEW);
             }
-            BufferedReader reader = Files.newBufferedReader(projectsFile);
-            JsonStreamParser parser = new JsonStreamParser(reader);
-            JsonArray projects = parser.next().getAsJsonArray();
-            reader.close();
-            for (JsonElement project : projects) {
-                if (project.isJsonPrimitive() && project.getAsJsonPrimitive().isString()) {
-                    Path projectPath = projectsPath.resolve(project.getAsString());
-                    Path projectFile = projectPath.resolve("project.json");
-                    reader = Files.newBufferedReader(projectFile);
-                    parser = new JsonStreamParser(reader);
-                    JsonElement json = parser.next();
-                    reader.close();
-                    if (json.isJsonObject()) {
-                        Dynamite.projects.add(Project.fromJson(json.getAsJsonObject()));
-                    } else {
-                        logger.warning("Invalid project: " + project);
-                    }
-                } else {
-                    logger.warning("Invalid project name: " + project);
+            List<String> projectNames = GSON.fromJson(Files.readString(projectNamesFile), List.class);
+
+            for (String projectName : projectNames) {
+                Path projectDirectory = projectsPath.resolve(projectName);
+                if (!Files.exists(projectDirectory)) {
+                    Files.createDirectories(projectDirectory);
+                }
+                Path projectFile = projectDirectory.resolve("project.json");
+                if (!Files.exists(projectFile)) {
+                    String str = GSON.toJson(new Project(projectName, System.currentTimeMillis(), null, List.of()));
+                    Files.writeString(projectFile, str, StandardOpenOption.CREATE_NEW);
+                }
+                try {
+                    projects.add(GSON.fromJson(Files.readString(projectFile), Project.class));
+                } catch (JsonSyntaxException exception) {
+                    logger.log(Level.SEVERE, "Failed to load project \"" + projectName + "\"", exception);
                 }
             }
         } catch (IOException exception) {
             logger.log(Level.SEVERE, "Failed to load projects", exception);
         }
+    }
+
+    public static void save() {
+        try {
+            Path projectsFile = projectsPath.resolve("projects.json");
+            JsonArray projects = new JsonArray();
+            Dynamite.projects.forEach(project -> projects.add(project.name()));
+            Files.writeString(projectsFile, projects.toString(), StandardOpenOption.CREATE);
+
+            for (Project project : Dynamite.projects) {
+                Path projectDirectory = projectsPath.resolve(project.name());
+                if (!Files.exists(projectDirectory)) {
+                    Files.createDirectories(projectDirectory);
+                }
+                Path projectFile = projectDirectory.resolve("project.json");
+                Files.writeString(projectFile, GSON.toJson(project), StandardOpenOption.CREATE);
+            }
+        } catch (IOException exception) {
+            exception.printStackTrace(System.err);
+        }
+    }
+
+    public static @NotNull List<Path> getFiles(final @NotNull String project, final @NotNull String version) {
+        Path versionPath = Dynamite.getProjectsPath().resolve(project).resolve(version);
+        try (Stream<Path> pathStream = Files.list(versionPath).filter(Files::isRegularFile)) {
+            return pathStream.toList();
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Failed to get the file list", e);
+            return List.of();
+        }
+    }
+
+    /**
+     * Checks if a request has the correct authentication header. If it does not, a 401 Unauthorized error will be
+     * returned.
+     *
+     * @param request The http request
+     * @param response The http response
+     * @return Whether the correct authentication header
+     */
+    public static boolean authenticate(final @NotNull HttpRequest request, final @NotNull HttpResponse response) {
+        String password = ":" + config.getString("password");
+        byte[] bytes = password.getBytes(StandardCharsets.UTF_8);
+        String auth = "Basic " + Base64.getEncoder().encodeToString(bytes);
+
+        CharSequence authorization = request.header(HttpHeaderNames.AUTHORIZATION);
+        if (authorization != null && auth.contentEquals(authorization)) {
+            // Correct password
+            return true;
+        } else {
+            // Incorrect password
+            response.status(HttpResponseStatus.UNAUTHORIZED);
+            response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
+            response.header(HttpHeaderNames.WWW_AUTHENTICATE, "Basic charset=\"UTF-8\"");
+            response.content(jsonError("Unauthorized"));
+            return false;
+        }
+    }
+
+    public static @NotNull List<Project> getProjects() {
+        return projects;
     }
 
     public static @NotNull Logger getLogger() {
@@ -105,44 +167,5 @@ public class Dynamite implements Listener {
 
     public static @NotNull Path getProjectsPath() {
         return projectsPath;
-    }
-
-    public static @NotNull List<Project> getProjects() {
-        return projects;
-    }
-
-    public static @Nullable List<String> getDownloads(@NotNull String project, @NotNull String version) {
-        try (Stream<Path> children =
-                Files.list(Dynamite.getProjectsPath().resolve(project).resolve(version))) {
-            List<String> downloads = new ArrayList<>();
-            for (Path child : children.toList()) {
-                if (Files.isRegularFile(child)) {
-                    downloads.add(child.getFileName().toString());
-                }
-            }
-            downloads.sort(String::compareTo);
-            return downloads;
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    public static void save() {
-        try {
-            Path projectsFile = projectsPath.resolve("projects.json");
-            JsonArray projects = new JsonArray();
-            Dynamite.projects.forEach(project -> projects.add(project.name()));
-            Files.write(projectsFile, projects.toString().getBytes(), StandardOpenOption.CREATE);
-            for (Project project : Dynamite.projects) {
-                Path projectPath = projectsPath.resolve(project.name());
-                if (!Files.exists(projectPath)) {
-                    Files.createDirectories(projectPath);
-                }
-                Path projectFile = projectPath.resolve("project.json");
-                Files.write(projectFile, project.toJson().toString().getBytes(), StandardOpenOption.CREATE);
-            }
-        } catch (IOException exception) {
-            exception.printStackTrace(System.err);
-        }
     }
 }
