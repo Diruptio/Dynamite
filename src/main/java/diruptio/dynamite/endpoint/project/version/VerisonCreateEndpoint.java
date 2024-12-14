@@ -24,8 +24,9 @@ public class VerisonCreateEndpoint {
 
         VersionCreateRequest createRequest;
         try {
-            createRequest = GSON.fromJson(request.contentAsString(), VersionCreateRequest.class);
-        } catch (JsonSyntaxException e) {
+            createRequest =
+                    Objects.requireNonNull(GSON.fromJson(request.contentAsString(), VersionCreateRequest.class));
+        } catch (JsonSyntaxException | NullPointerException e) {
             response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
             response.status(HttpResponseStatus.BAD_REQUEST);
             response.content(
@@ -68,5 +69,11 @@ public class VerisonCreateEndpoint {
     }
 
     private record VersionCreateRequest(
-            @NotNull String project, @NotNull String name, @NotNull Set<String> tags, @Nullable String gitCommit) {}
+            @NotNull String project, @NotNull String name, @NotNull Set<String> tags, @Nullable String gitCommit) {
+        VersionCreateRequest {
+            Objects.requireNonNull(project);
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(tags);
+        }
+    }
 }

@@ -24,8 +24,8 @@ public class ProjectTagsEndpoint {
 
         ProjectTagsRequest tagsRequest;
         try {
-            tagsRequest = GSON.fromJson(request.contentAsString(), ProjectTagsRequest.class);
-        } catch (JsonSyntaxException e) {
+            tagsRequest = Objects.requireNonNull(GSON.fromJson(request.contentAsString(), ProjectTagsRequest.class));
+        } catch (JsonSyntaxException | NullPointerException e) {
             response.status(HttpResponseStatus.BAD_REQUEST);
             response.content(jsonError("Please check json structure: {\"project\": string}"));
             return;

@@ -11,6 +11,7 @@ import diruptio.spikedog.HttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -24,8 +25,8 @@ public class ProjectEndpoint {
 
         ProjectRequest projectRequest;
         try {
-            projectRequest = GSON.fromJson(request.contentAsString(), ProjectRequest.class);
-        } catch (JsonSyntaxException e) {
+            projectRequest = Objects.requireNonNull(GSON.fromJson(request.contentAsString(), ProjectRequest.class));
+        } catch (JsonSyntaxException | NullPointerException e) {
             response.status(HttpResponseStatus.BAD_REQUEST);
             response.content(
                     jsonError(
@@ -58,5 +59,9 @@ public class ProjectEndpoint {
 
     private record ProjectRequestFilter(@Nullable Set<String> tags) {}
 
-    private record ProjectRequest(@NotNull String project, @Nullable ProjectRequestFilter filter) {}
+    private record ProjectRequest(@NotNull String project, @Nullable ProjectRequestFilter filter) {
+        ProjectRequest {
+            Objects.requireNonNull(project);
+        }
+    }
 }

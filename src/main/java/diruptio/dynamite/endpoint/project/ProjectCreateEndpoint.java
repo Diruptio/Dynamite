@@ -27,8 +27,9 @@ public class ProjectCreateEndpoint {
 
         ProjectCreateRequest createRequest;
         try {
-            createRequest = GSON.fromJson(request.contentAsString(), ProjectCreateRequest.class);
-        } catch (JsonSyntaxException e) {
+            createRequest =
+                    Objects.requireNonNull(GSON.fromJson(request.contentAsString(), ProjectCreateRequest.class));
+        } catch (JsonSyntaxException | NullPointerException e) {
             response.status(HttpResponseStatus.BAD_REQUEST);
             response.content(jsonError("Please check json structure: {\"name\": string, \"gitUrl\": string | null}"));
             return;
