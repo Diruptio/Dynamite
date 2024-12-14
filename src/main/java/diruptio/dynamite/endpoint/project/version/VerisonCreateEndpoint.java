@@ -68,5 +68,11 @@ public class VerisonCreateEndpoint {
     }
 
     private record VersionCreateRequest(
-            @NotNull String project, @NotNull String name, @NotNull Set<String> tags, @Nullable String gitCommit) {}
+            @NotNull String project, @NotNull String name, @NotNull Set<String> tags, @Nullable String gitCommit) {
+        VersionCreateRequest {
+            Objects.requireNonNull(project);
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(tags);
+        }
+    }
 }
