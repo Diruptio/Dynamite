@@ -22,7 +22,9 @@ import java.util.logging.Level;
 import org.jetbrains.annotations.NotNull;
 
 public class VersionDownloadEndpoint {
-    @Endpoint(path = "/project/version/download")
+    @Endpoint(
+            path = "/project/version/download",
+            methods = {"GET"})
     public void handle(@NotNull HttpRequest request, @NotNull HttpResponse response) {
         // Get the project name
         String projectName = request.parameter("project");

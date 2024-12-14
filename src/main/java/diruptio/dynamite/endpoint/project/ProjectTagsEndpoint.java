@@ -18,7 +18,9 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
 public class ProjectTagsEndpoint {
-    @Endpoint(path = "/project/tags")
+    @Endpoint(
+            path = "/project/tags",
+            methods = {"GET"})
     public void handle(@NotNull HttpRequest request, @NotNull HttpResponse response) {
         response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
 

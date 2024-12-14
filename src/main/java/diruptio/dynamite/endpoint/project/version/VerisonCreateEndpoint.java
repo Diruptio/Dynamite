@@ -16,7 +16,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class VerisonCreateEndpoint {
-    @Endpoint(path = "/project/version/create")
+    @Endpoint(
+            path = "/project/version/create",
+            methods = {"POST"})
     public void handle(@NotNull HttpRequest request, @NotNull HttpResponse response) {
         if (!Dynamite.authenticate(request, response)) {
             return;

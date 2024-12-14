@@ -19,7 +19,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class ProjectEndpoint {
-    @Endpoint(path = "/project")
+    @Endpoint(
+            path = "/project",
+            methods = {"GET"})
     public void handle(final @NotNull HttpRequest request, final @NotNull HttpResponse response) {
         response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
 

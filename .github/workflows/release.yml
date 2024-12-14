@@ -37,4 +37,4 @@ jobs:
           curl -X POST -H "Content-Type: application/json" -H "Authorization: ${{ secrets.AUTHORIZATION_HEADER }}" -d "{"project":"dynamite","name":"${{ github.ref_name }}","tags":["release"],"gitCommit":"${{ github.sha }}"}" "https://api.diruptio.de/project/version/create"
       - name: Upload to Diruptio projects
         run: |
-          cat build/libs/Dynamite.jar | curl -X GET -H "Authorization: ${{ secrets.AUTHORIZATION_HEADER }}" --data @- "https://api.diruptio.de/project/version/upload?project=dynamite&version=${{ github.ref_name }}&file=Dynamite.jar"
+          cat build/libs/Dynamite.jar | curl -X POST -H "Authorization: ${{ secrets.AUTHORIZATION_HEADER }}" --data @- "https://api.diruptio.de/project/version/upload?project=dynamite&version=${{ github.ref_name }}&file=Dynamite.jar"

@@ -13,7 +13,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import org.jetbrains.annotations.NotNull;
 
 public class ProjectsEndpoint {
-    @Endpoint(path = "/projects")
+    @Endpoint(
+            path = "/projects",
+            methods = {"GET"})
     public void handle(@NotNull HttpRequest request, @NotNull HttpResponse response) {
         response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
         response.status(HttpResponseStatus.OK);

@@ -19,7 +19,9 @@ import java.util.logging.Level;
 import org.jetbrains.annotations.NotNull;
 
 public class VersionUploadEndpoint {
-    @Endpoint(path = "/project/version/upload")
+    @Endpoint(
+            path = "/project/version/upload",
+            methods = {"POST"})
     public void handle(@NotNull HttpRequest request, @NotNull HttpResponse response) {
         if (!Dynamite.authenticate(request, response)) {
             return;
