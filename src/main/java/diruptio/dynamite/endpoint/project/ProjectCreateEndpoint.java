@@ -41,7 +41,7 @@ public class ProjectCreateEndpoint {
         }
 
         // Check if the project already exists
-        if (Dynamite.getProjects().stream().anyMatch(project2 -> project2.name().equals(projectName))) {
+        if (Dynamite.getProjects().stream().anyMatch(project2 -> project2.id().equals(projectName))) {
             response.status(HttpResponseStatus.BAD_REQUEST);
             response.content(jsonError("Project already exists"));
             return;

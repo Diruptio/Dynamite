@@ -32,7 +32,7 @@ public class ProjectTagsEndpoint {
 
         // Check if the project exists
         Optional<Project> project = Dynamite.getProjects().stream()
-                .filter(project2 -> project2.name().equals(projectId))
+                .filter(project2 -> project2.id().equals(projectId))
                 .findFirst();
         if (project.isEmpty()) {
             response.status(HttpResponseStatus.NOT_FOUND);

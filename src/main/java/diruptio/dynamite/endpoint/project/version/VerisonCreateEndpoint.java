@@ -39,7 +39,7 @@ public class VerisonCreateEndpoint {
 
         // Check if the project exists
         Optional<Project> project = Dynamite.getProjects().stream()
-                .filter(project2 -> project2.name().equals(createRequest.project))
+                .filter(project2 -> project2.id().equals(createRequest.project))
                 .findFirst();
         if (project.isEmpty()) {
             response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
