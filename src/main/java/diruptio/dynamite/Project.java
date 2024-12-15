@@ -1,5 +1,8 @@
 package diruptio.dynamite;
 
+import static diruptio.dynamite.util.JsonUtil.GSON;
+
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +29,20 @@ public record Project(
         return new Project(id, name, creationDate, gitUrl, versions);
     }
 
+    public @NotNull JsonObject withDownloads() {
+        JsonObject json = new JsonObject();
+        json.addProperty("id", id);
+        json.addProperty("name", name);
+        json.addProperty("creationDate", creationDate);
+        json.addProperty("gitUrl", gitUrl);
+        JsonArray versions = new JsonArray();
+        for (Project.Version version : this.versions) {
+            versions.add(version.withDownloads(id));
+        }
+        json.add("versions", versions);
+        return json;
+    }
+
     /**
      * Creates a JSON object with information about the project id, name, creation date and the git url.
      *
@@ -41,5 +58,11 @@ public record Project(
     }
 
     public record Version(
-            @NotNull String name, @NotNull Set<String> tags, long creationDate, @Nullable String gitCommit) {}
+            @NotNull String name, @NotNull Set<String> tags, long creationDate, @Nullable String gitCommit) {
+        public @NotNull JsonObject withDownloads(final @NotNull String project) {
+            JsonObject json = GSON.toJsonTree(this).getAsJsonObject();
+            json.add("files", GSON.toJsonTree(Dynamite.getFiles(project, name)));
+            return json;
+        }
+    }
 }

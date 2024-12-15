@@ -26,9 +26,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class Dynamite implements Listener {
     private static final List<Project> projects = new ArrayList<>();
+    private static final Map<String, Map<String, Set<String>>> files = new HashMap<>();
     private static Logger logger;
     private static Config config;
     private static Path projectsPath;
@@ -117,16 +119,6 @@ public class Dynamite implements Listener {
         }
     }
 
-    public static @NotNull List<Path> getFiles(final @NotNull String projectId, final @NotNull String version) {
-        Path versionPath = Dynamite.getProjectsPath().resolve(projectId).resolve(version);
-        try (Stream<Path> pathStream = Files.list(versionPath).filter(Files::isRegularFile)) {
-            return pathStream.toList();
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Failed to get the file list", e);
-            return List.of();
-        }
-    }
-
     /**
      * Checks if a request has the correct authentication header. If it does not, a 401 Unauthorized error will be
      * returned.
@@ -156,6 +148,48 @@ public class Dynamite implements Listener {
 
     public static @NotNull List<Project> getProjects() {
         return projects;
+    }
+
+    public static @NotNull Map<String, Map<String, Set<String>>> getFiles() {
+        return files;
+    }
+
+    public static @Nullable Set<String> getFiles(final @NotNull String projectId, final @NotNull String versionName) {
+        Optional<Project> project = projects.stream()
+                .filter(project2 -> project2.id().equals(projectId))
+                .findFirst();
+        if (project.isEmpty()) {
+            return null;
+        }
+
+        if (!files.containsKey(projectId)) {
+            files.put(projectId, new HashMap<>());
+        }
+        Map<String, Set<String>> files = Dynamite.files.get(projectId);
+
+        Optional<Project.Version> version = project.get().versions().stream()
+                .filter(version2 -> version2.name().equals(versionName))
+                .findFirst();
+        if (version.isEmpty()) {
+            return null;
+        }
+
+        if (!files.containsKey(versionName)) {
+            Path versionPath = Dynamite.getProjectsPath().resolve(projectId).resolve(versionName);
+            try (Stream<Path> pathStream = Files.list(versionPath).filter(Files::isRegularFile)) {
+                files.put(
+                        versionName,
+                        new HashSet<>(pathStream
+                                .map(Path::getFileName)
+                                .map(Path::toString)
+                                .toList()));
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "Failed to get the file list", e);
+                return null;
+            }
+        }
+
+        return files.get(versionName);
     }
 
     public static @NotNull Logger getLogger() {

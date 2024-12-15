@@ -43,7 +43,7 @@ public class ProjectEndpoint {
         // Create filter
         Predicate<Project.Version> filter = version -> true;
 
-        // Get the project name
+        // Get the tags for filtering
         String tagsParam = request.parameter("tags");
         if (tagsParam != null) {
             Set<String> tags = Set.of(tagsParam.split(";"));
@@ -52,6 +52,6 @@ public class ProjectEndpoint {
 
         // Success
         response.status(HttpResponseStatus.OK);
-        response.content(GSON.toJson(project.get().filterVersions(filter)));
+        response.content(project.get().filterVersions(filter).withDownloads().toString());
     }
 }

@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
 import org.jetbrains.annotations.NotNull;
@@ -81,6 +82,7 @@ public class VersionUploadEndpoint {
             byte[] bytes = new byte[request.content().readableBytes()];
             request.content().readBytes(bytes);
             Files.write(versionPath.resolve(fileName), bytes, StandardOpenOption.CREATE);
+            Objects.requireNonNull(Dynamite.getFiles(projectId, versionName)).add(fileName);
             Dynamite.getLogger()
                     .info("Uploaded file %s for version %s of project %s".formatted(fileName, versionName, projectId));
         } catch (IOException exception) {

@@ -2,8 +2,6 @@ package diruptio.dynamite.endpoint.project.version;
 
 import static diruptio.dynamite.util.JsonUtil.*;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import diruptio.dynamite.Dynamite;
 import diruptio.dynamite.Project;
 import diruptio.spikedog.Endpoint;
@@ -16,8 +14,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import org.jetbrains.annotations.NotNull;
 
@@ -69,43 +67,34 @@ public class VersionDownloadEndpoint {
         }
 
         // Get downloads
-        List<Path> files = Dynamite.getFiles(projectId, versionName);
-        Path file;
-        if (files.isEmpty()) {
+        Set<String> files = Dynamite.getFiles(projectId, versionName);
+        String file;
+        if (files == null || files.isEmpty()) {
             response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
             response.status(HttpResponseStatus.NOT_FOUND);
             response.content(jsonError("No files found"));
             return;
         } else if (files.size() == 1) {
-            file = files.getFirst();
+            file = files.stream().findFirst().get();
         } else {
-            String fileName = request.parameter("file");
-            if (fileName == null) {
+            file = request.parameter("file");
+            if (file == null) {
                 response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
                 response.status(HttpResponseStatus.BAD_REQUEST);
-                JsonObject json = new JsonObject();
-                json.addProperty("error", "Multiple downloads found and parameter \"download\" is missing");
-                JsonArray downloadsJson = new JsonArray();
-                for (Path file2 : files) {
-                    downloadsJson.add(file2.getFileName().toString());
-                }
-                json.add("downloads", downloadsJson);
-                response.content(json.toString());
+                response.content(jsonError("Multiple downloads found and parameter \"download\" is missing"));
                 return;
-            } else {
-                file = versionPath.resolve(fileName);
-                if (!Files.exists(file)) {
-                    response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
-                    response.status(HttpResponseStatus.NOT_FOUND);
-                    response.content(jsonError("File not found"));
-                    return;
-                }
+            }
+            if (!files.contains(file)) {
+                response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
+                response.status(HttpResponseStatus.NOT_FOUND);
+                response.content(jsonError("File not found"));
+                return;
             }
         }
 
-        // Read file
+        // Read the file
         try {
-            response.content(Unpooled.wrappedBuffer(Files.readAllBytes(file)));
+            response.content(Unpooled.wrappedBuffer(Files.readAllBytes(versionPath.resolve(file))));
         } catch (IOException exception) {
             Dynamite.getLogger().log(Level.SEVERE, "Failed to read file", exception);
             response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
@@ -115,7 +104,7 @@ public class VersionDownloadEndpoint {
         }
 
         // Success
-        response.header(HttpHeaderNames.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFileName() + "\"");
+        response.header(HttpHeaderNames.CONTENT_DISPOSITION, "attachment; filename=\"" + file + "\"");
         response.status(HttpResponseStatus.OK);
     }
 }

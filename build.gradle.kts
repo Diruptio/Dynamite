@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "diruptio"
-version = "2.0.4"
+version = "2.0.5"
 
 repositories {
     mavenCentral()
@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("diruptio:Spikedog:2.0.0-beta.10")
+    compileOnly("diruptio:Spikedog:2.0.0-beta.11")
     compileOnly("org.jetbrains:annotations:26.0.1")
 }
 
