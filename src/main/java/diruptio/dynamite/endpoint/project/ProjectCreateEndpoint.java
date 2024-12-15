@@ -24,11 +24,19 @@ public class ProjectCreateEndpoint {
 
         response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
 
+        // Get the project id
+        String projectId = request.parameter("id");
+        if (projectId == null) {
+            response.status(HttpResponseStatus.BAD_REQUEST);
+            response.content(jsonError("Parameter \"id\" (project id) is missing"));
+            return;
+        }
+
         // Get the project name
         String projectName = request.parameter("name");
         if (projectName == null) {
             response.status(HttpResponseStatus.BAD_REQUEST);
-            response.content(jsonError("Parameter \"name\" is missing"));
+            response.content(jsonError("Parameter \"name\" (project name) is missing"));
             return;
         }
 
@@ -42,7 +50,8 @@ public class ProjectCreateEndpoint {
         // Get the git url
         String gitUrl = request.parameter("git_url");
 
-        Dynamite.getProjects().add(new Project(projectName, System.currentTimeMillis(), gitUrl, new ArrayList<>()));
+        Dynamite.getProjects()
+                .add(new Project(projectId, projectName, System.currentTimeMillis(), gitUrl, new ArrayList<>()));
         Dynamite.save();
         Dynamite.getLogger().info("Created project %s (Git: %s)".formatted(projectName, gitUrl));
 

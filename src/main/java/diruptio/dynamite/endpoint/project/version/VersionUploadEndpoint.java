@@ -29,30 +29,30 @@ public class VersionUploadEndpoint {
 
         response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
 
-        // Get the project name
-        String projectName = request.parameter("project");
-        if (projectName == null) {
+        // Get the project id
+        String projectId = request.parameter("project");
+        if (projectId == null) {
             response.status(HttpResponseStatus.BAD_REQUEST);
-            response.content(jsonError("Parameter \"project\" is missing"));
+            response.content(jsonError("Parameter \"project\" (project id) is missing"));
             return;
         }
 
         // Check if the project exists
         Optional<Project> project = Dynamite.getProjects().stream()
-                .filter(project2 -> project2.name().equals(projectName))
+                .filter(project2 -> project2.name().equals(projectId))
                 .findFirst();
         if (project.isEmpty()) {
             response.status(HttpResponseStatus.NOT_FOUND);
             response.content(jsonError("Project not found"));
             return;
         }
-        Path projectPath = Dynamite.getProjectsPath().resolve(projectName);
+        Path projectPath = Dynamite.getProjectsPath().resolve(projectId);
 
         // Get the version name
         String versionName = request.parameter("version");
         if (versionName == null) {
             response.status(HttpResponseStatus.BAD_REQUEST);
-            response.content(jsonError("Parameter \"project\" is missing"));
+            response.content(jsonError("Parameter \"version\" (version name) is missing"));
             return;
         }
 
@@ -82,8 +82,7 @@ public class VersionUploadEndpoint {
             request.content().readBytes(bytes);
             Files.write(versionPath.resolve(fileName), bytes, StandardOpenOption.CREATE);
             Dynamite.getLogger()
-                    .info("Uploaded file %s for version %s of project %s"
-                            .formatted(fileName, versionName, projectName));
+                    .info("Uploaded file %s for version %s of project %s".formatted(fileName, versionName, projectId));
         } catch (IOException exception) {
             Dynamite.getLogger().log(Level.SEVERE, "Failed to write file " + versionPath.resolve(fileName), exception);
             response.status(HttpResponseStatus.INTERNAL_SERVER_ERROR);

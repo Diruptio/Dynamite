@@ -26,18 +26,18 @@ public class VersionDownloadEndpoint {
             path = "/project/version/download",
             methods = {"GET"})
     public void handle(@NotNull HttpRequest request, @NotNull HttpResponse response) {
-        // Get the project name
-        String projectName = request.parameter("project");
-        if (projectName == null) {
+        // Get the project id
+        String projectId = request.parameter("project");
+        if (projectId == null) {
             response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
             response.status(HttpResponseStatus.BAD_REQUEST);
-            response.content(jsonError("Parameter \"project\" is missing"));
+            response.content(jsonError("Parameter \"project\" (project id) is missing"));
             return;
         }
 
         // Check if the project exists
         Optional<Project> project = Dynamite.getProjects().stream()
-                .filter(project2 -> project2.name().equals(projectName))
+                .filter(project2 -> project2.name().equals(projectId))
                 .findFirst();
         if (project.isEmpty()) {
             response.status(HttpResponseStatus.NOT_FOUND);
@@ -45,14 +45,14 @@ public class VersionDownloadEndpoint {
             response.content(jsonError("Project not found"));
             return;
         }
-        Path projectPath = Dynamite.getProjectsPath().resolve(projectName);
+        Path projectPath = Dynamite.getProjectsPath().resolve(projectId);
 
         // Get the version name
         String versionName = request.parameter("version");
         if (versionName == null) {
             response.status(HttpResponseStatus.BAD_REQUEST);
             response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
-            response.content(jsonError("Parameter \"version\" is missing"));
+            response.content(jsonError("Parameter \"version\" (version name) is missing"));
             return;
         }
         Path versionPath = projectPath.resolve(versionName);
@@ -69,7 +69,7 @@ public class VersionDownloadEndpoint {
         }
 
         // Get downloads
-        List<Path> files = Dynamite.getFiles(projectName, versionName);
+        List<Path> files = Dynamite.getFiles(projectId, versionName);
         Path file;
         if (files.isEmpty()) {
             response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);

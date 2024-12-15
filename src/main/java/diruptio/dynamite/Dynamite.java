@@ -69,26 +69,27 @@ public class Dynamite implements Listener {
                 Files.createDirectories(projectsPath);
             }
 
-            Path projectNamesFile = projectsPath.resolve("projects.json");
-            if (!Files.exists(projectNamesFile)) {
-                Files.writeString(projectNamesFile, GSON.toJson(List.<String>of()), StandardOpenOption.CREATE_NEW);
+            Path projectIdsFile = projectsPath.resolve("projects.json");
+            if (!Files.exists(projectIdsFile)) {
+                Files.writeString(projectIdsFile, GSON.toJson(List.<String>of()), StandardOpenOption.CREATE_NEW);
             }
-            List<String> projectNames = GSON.fromJson(Files.readString(projectNamesFile), List.class);
+            List<String> projectIds = GSON.fromJson(Files.readString(projectIdsFile), List.class);
 
-            for (String projectName : projectNames) {
-                Path projectDirectory = projectsPath.resolve(projectName);
+            for (String projectId : projectIds) {
+                Path projectDirectory = projectsPath.resolve(projectId);
                 if (!Files.exists(projectDirectory)) {
                     Files.createDirectories(projectDirectory);
                 }
                 Path projectFile = projectDirectory.resolve("project.json");
                 if (!Files.exists(projectFile)) {
-                    String str = GSON.toJson(new Project(projectName, System.currentTimeMillis(), null, List.of()));
+                    String str =
+                            GSON.toJson(new Project(projectId, projectId, System.currentTimeMillis(), null, List.of()));
                     Files.writeString(projectFile, str, StandardOpenOption.CREATE_NEW);
                 }
                 try {
                     projects.add(GSON.fromJson(Files.readString(projectFile), Project.class));
                 } catch (JsonSyntaxException exception) {
-                    logger.log(Level.SEVERE, "Failed to load project \"" + projectName + "\"", exception);
+                    logger.log(Level.SEVERE, "Failed to load project " + projectId, exception);
                 }
             }
         } catch (IOException exception) {
@@ -116,8 +117,8 @@ public class Dynamite implements Listener {
         }
     }
 
-    public static @NotNull List<Path> getFiles(final @NotNull String project, final @NotNull String version) {
-        Path versionPath = Dynamite.getProjectsPath().resolve(project).resolve(version);
+    public static @NotNull List<Path> getFiles(final @NotNull String projectId, final @NotNull String version) {
+        Path versionPath = Dynamite.getProjectsPath().resolve(projectId).resolve(version);
         try (Stream<Path> pathStream = Files.list(versionPath).filter(Files::isRegularFile)) {
             return pathStream.toList();
         } catch (IOException e) {

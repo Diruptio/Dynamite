@@ -19,7 +19,7 @@ public class ProjectsEndpoint {
     public void handle(@NotNull HttpRequest request, @NotNull HttpResponse response) {
         response.header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
         response.status(HttpResponseStatus.OK);
-        response.content(
-                GSON.toJson(Dynamite.getProjects().stream().map(Project::name).toList()));
+        response.content(GSON.toJson(
+                Dynamite.getProjects().stream().map(Project::withoutVersions).toList()));
     }
 }
