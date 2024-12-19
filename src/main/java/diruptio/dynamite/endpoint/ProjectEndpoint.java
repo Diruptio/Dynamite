@@ -56,7 +56,7 @@ public class ProjectEndpoint {
         response.content(project.get()
                 .filterVersions(filter)
                 .sortVersions(new VersionComparator())
-                .withDownloads()
+                .withFiles()
                 .toString());
     }
 

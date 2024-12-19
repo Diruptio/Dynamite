@@ -42,7 +42,7 @@ public record Project(
         return new Project(id, name, creationDate, gitUrl, versions);
     }
 
-    public @NotNull JsonObject withDownloads() {
+    public @NotNull JsonObject withFiles() {
         JsonObject json = new JsonObject();
         json.addProperty("id", id);
         json.addProperty("name", name);
@@ -50,7 +50,7 @@ public record Project(
         json.addProperty("gitUrl", gitUrl);
         JsonArray versions = new JsonArray();
         for (Project.Version version : this.versions) {
-            versions.add(version.withDownloads(id));
+            versions.add(version.withFiles(id));
         }
         json.add("versions", versions);
         return json;
@@ -72,7 +72,7 @@ public record Project(
 
     public record Version(
             @NotNull String name, @NotNull Set<String> tags, long creationDate, @Nullable String gitCommit) {
-        public @NotNull JsonObject withDownloads(final @NotNull String project) {
+        public @NotNull JsonObject withFiles(final @NotNull String project) {
             JsonObject json = GSON.toJsonTree(this).getAsJsonObject();
             json.add("files", GSON.toJsonTree(Dynamite.getFiles(project, name)));
             return json;
