@@ -10,6 +10,7 @@ import diruptio.spikedog.HttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -52,6 +53,17 @@ public class ProjectEndpoint {
 
         // Success
         response.status(HttpResponseStatus.OK);
-        response.content(project.get().filterVersions(filter).withDownloads().toString());
+        response.content(project.get()
+                .filterVersions(filter)
+                .sortVersions(new VersionComparator())
+                .withDownloads()
+                .toString());
+    }
+
+    private static class VersionComparator implements Comparator<Project.Version> {
+        @Override
+        public int compare(Project.Version version1, Project.Version version2) {
+            return Long.compare(version2.creationDate(), version1.creationDate());
+        }
     }
 }

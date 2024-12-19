@@ -5,6 +5,7 @@ import static diruptio.dynamite.util.JsonUtil.GSON;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -18,7 +19,7 @@ public record Project(
         @Nullable String gitUrl,
         @NotNull List<Version> versions) {
     /**
-     * Creates a virtual copy of this project with the original name and gitUrl but filters the versions
+     * Creates a virtual copy of this project with the same id, name, creation date and gitUrl but filters the versions
      *
      * @param filter The filter
      * @return The new project with filtered versions
@@ -26,6 +27,18 @@ public record Project(
     public @NotNull Project filterVersions(final @NotNull Predicate<Version> filter) {
         List<Version> versions = new ArrayList<>();
         this.versions.stream().filter(filter).forEach(versions::add);
+        return new Project(id, name, creationDate, gitUrl, versions);
+    }
+
+    /**
+     * Creates a virtual copy of this project with the same id, name, creation date and gitUrl but sorts the versions
+     *
+     * @param comparator The version comparator
+     * @return The new project with filtered versions
+     */
+    public @NotNull Project sortVersions(final @NotNull Comparator<Version> comparator) {
+        List<Version> versions = new ArrayList<>(this.versions);
+        versions.sort(comparator);
         return new Project(id, name, creationDate, gitUrl, versions);
     }
 
