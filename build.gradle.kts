@@ -13,7 +13,7 @@ repositories {
 
 dependencies {
     compileOnly("diruptio:Spikedog:2.0.0-beta.13")
-    compileOnly("org.jetbrains:annotations:26.0.1")
+    compileOnly("org.jetbrains:annotations:26.0.2")
 }
 
 spotless {
